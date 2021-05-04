@@ -1,0 +1,74 @@
+#!/usr/bin/bash
+
+
+# DEFAULT ARGUMENTS
+
+# $SEP separtor type
+SEP="\t"
+
+# $COLS the user needs to define the columns of interest from arguments, that are fed to awk as $N columns, separated by a space as in $1" "$2" "$4 which takes columns 1, 2, and 4, and separates them by white spaces
+
+# $INPUTFILE defines the text file to process. It must can be either an absolute or tilde-prefixed path. Without default.
+
+# $THIN is an argument that controls how spaced are the samples of the trace to be plotted. Default 1 (print all)
+THIN=1
+
+# $WIDTH and $HEIGHT control the plot size, defaults are 50 x 50
+WIDTH=50
+HEIGHT=50
+
+# $PLOT_TYPE controls gnuplot's plot type: linepoints (lp), lines (l), points (p), etc. Default is points
+PLOT_TYPE="p"
+
+
+## usage:
+#minitracer -s \t -c 2,3 -i ~/Desktop/fbd/barracudas_fbd_results/barracudas_fbd_run_1.log -t 500 -w 100 -h 30 -p p
+
+# arg parsing
+#minitracer -s \t -c 2,3 -i ~/Desktop/fbd/barracudas_fbd_results/barracudas_fbd_run_1.log -t 500 -w 100 -h 30 -p p
+while getopts s:c:i:t:w:h:p: option
+do
+    case "${option}"
+    in
+	s) SEP=${OPTARG};;
+	c) COLS=${OPTARG};;
+	i) INPUT=${OPTARG};;
+	t) THIN=${OPTARG};;
+	w) WIDTH=${OPTARG};;
+	h) HEIGHT=${OPTARG};;
+	p) PLOT_TYPE=${OPTARG};;
+    esac
+done
+
+
+## test that all arguments were provided
+if [ "$#" -ne 14 ]; then
+    echo "Error: Not all arguments provided. Did you set the input file (-i) and columns (-c)?"
+    exit 1
+fi
+
+# preprocess the col indexes for awk
+COLS=`echo $COLS | sed -e "s/,/\" \"\$/g" | sed -e "s/^/\$/"`
+
+# expand the tilde
+INPUT=`echo $INPUT | sed -e "s|~|${HOME}|"`
+
+
+# check arguments
+echo "The value of SEP is "$SEP
+echo "The value of COLS is "$COLS
+echo "The value of INPUT is "$INPUT
+echo "The value of THIN is "$THIN
+echo "The value of WIDTH is "$WIDTH
+echo "The value of HEIGHT is "$HEIGHT
+echo "The value of PLOT_TYPE is "$PLOT_TYPE
+
+#awk -F$SEP '{print $COLUMNS}' $INPUTFILE | \
+#    awk -v THIN=$THIN 'NR % THIN == 0' | \
+#    gnuplot -e "set term dumb $WIDTH $HEIGHT; plot '-' w $PLOT_TYPE"
+
+echo "Starting execution..."
+
+awk -F$SEP '{print $COLS}' $INPUT | \
+    awk -v THIN=$THIN 'NR % THIN == 0' | \
+    gnuplot -e "set term dumb $WIDTH $HEIGHT; plot '-' w $PLOT_TYPE"
